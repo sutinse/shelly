@@ -2,57 +2,107 @@
 const axios = require("axios");
 
 let CONFIG = {
-    // Set cheapest serial hour amount IF you use that Profile 1 (cheapest serial hours)
+    // Set cheapest serial hour count IF you use that Profile 1 (cheapest serial hours)
     cheapestPeriodHours: 3,
     // If prices cannot be retrived, hour when relay is set ON
     periodFallbackHourStart: 2,
     // If prices cannot be retrived, hour when relay is set ON
     periodFallbackHourEnd: 5,
+    // Set the price, when the equipment is ON if the price is below this set 
+    //between CONFIG interval priceBelowDeviceOnStart --> priceBelowDeviceOnEnd
+    // Example value is below = 3 snt
+    priceBelowDeviceOn: 3,
+    // If price is below that CONFIG priceBelowDeviceOn, set device ON starting this HOUR
+    // so you can config 0-24. This config is betwwn 0-7
+    priceBelowDeviceOnStart: 0,
+    // If price is below that CONFIG priceBelowDeviceOn, set device ON starting this HOUR
+    priceBelowDeviceOnEnd: 7
 }
 let RELAY_OUTPUTS = {
     // This relay has 2 output. Add more if your relays has more (like Pro 4PM has four)
-    id0 : {
+    0 : {
         // profile 1 means cheapest sequential hours
         profile : 1,
         // NOT USED in Profile1! SET hours in CONFIG cheapestPeriodHours variable
-        hours : 3
+        hours : 3,
+        // if relay is set ON if price is below configured between configured timeinterval
+        // 0 = NOT USE belowprices, 1 = USE belowprices
+        useCheapBelowPrices : 0
     },
-    id1 : {
+    1 : {
         // profile 0 (default) means cheapest hours in day
-        profile : 0, 
-        hours : 4
+        profile : 0,
+        // Hours count that device should be ON 
+        hours : 4,
+        // if relay is set ON if price is below configured between configured timeinterval
+        // 0 = NOT USE belowprices, 1 = USE belowprices
+        useCheapBelowPrices : 1
     }
 }
 
 let periodPricesUrl = "https://api.spot-hinta.fi/CheapestPeriod/" + CONFIG.cheapestPeriodHours;
-
-let priceUrl = 'https://api.spot-hinta.fi/Today';
+let priceRankUrl = 'https://api.spot-hinta.fi/Today';
+let pricesRank;
 let pricesPeriod;
 let previousRetrievedDate=0;
 
-function retrievePrices(url) {
+// Retrive Ranked or PeriodicalPrices
+function retrievePrices(url, pricesPeriodical) {
+    console.log("> Retriving prices start from url: ");
+    console.log(url);
+
     axios.get(url)
         .then(res => {
             console.log("Response");
             console.log(res.status);
             console.log(res.data);
             //return res.data;
-            pricesPeriod = res.data;
+            if (pricesPeriodical) {
+                // PeriodPrices
+                pricesPeriod = res.data;
+            } else {
+                pricesRank = res.data;
+            }
         })
         .catch(err => {
             if (err.response) {
                 // client received an error response (5xx, 4xx)
-                console.error('Error response from server')
+                console.error('Error retriving prices from url ');
+                console.log(url);
+                console.log("error");
                 console.error(err.response.data);
-                console.error("Status: " + err.response.status);
-                console.error(err.response.headers);            
+                console.error("Status: ");
+                console.log(err.response.status);
+                console.error(err.response.headers);
+                if (pricesPeriodical) {
+                    // PeriodPrices
+                    pricesPeriod = null;
+                } else {
+                    pricesRank = null;
+                }            
             } else if (err.request) {
                 // client never received a response, or request never left
-                console.error('NO response from server from url: ' + url);
+                console.error('NO response from server from url: ');
+                console.log(url);
+                if (pricesPeriodical) {
+                    // PeriodPrices
+                    pricesPeriod = null;
+                } else {
+                    pricesRank = null;
+                }
             } else {
                 // anything else
-                pricesPeriod = null;
-                console.error('Error ' + err.error + ", url: " + url);
+                if (pricesPeriodical) {
+                    // PeriodPrices
+                    pricesPeriod = null;
+                } else {
+                    pricesRank = null;
+                }
+                console.error('Error retrieving prices from ulr ');
+                console.log(url);
+                console.log("Error");
+                console.log(err.error);
+
             }
         }).finally(() => {
             console.log("Axios finally starts.");
@@ -61,6 +111,7 @@ function retrievePrices(url) {
             //console.log(pricesPeriod);
             console.log("Axios finally ends.");
         });
+        console.log("> Retriving prices end ");
 }
 
 function getRelayStatus(id) {
@@ -80,11 +131,13 @@ function getRelayStatus(id) {
     );
     */
     output = false;
-    console.log("getRelayStatus: Switch id: " + id + ", status: " + output);
+    let stateStr = output ? "ON" : "OFF";
+    console.log("getRelayStatus: Switch id: " + id + ", status: " + stateStr);
     return output;
 }
 function setRelayAction(id, action) {
-    console.log("> setRelayAction: Switch id: " + id + ", action: " + action);
+    let stateStr = action ? "ON" : "OFF";
+    console.log("> setRelayAction: Switch id: " + id + ", action: " + stateStr);
     let relayStatus = getRelayStatus(id);
     if (relayStatus !== action) {
         /*
@@ -99,11 +152,11 @@ function setRelayAction(id, action) {
             null
         );
         */
-        console.log("setRelayAction action setted for Switch id: " + id + ", action: " + action);
+        console.log("setRelayAction action setted for Switch id: " + id + ", action: " + stateStr);
     } else {
-        console.log("> setRelayAction action NOT setted for Switch id: " + id + " ALREADY on wanted action: " + action);
+        console.log("> setRelayAction action NOT setted for Switch id: " + id + " ALREADY on desired action: " + stateStr);
     }// endIf if (relayStatus !== action)
-    console.log("< setRelayAction: id: " + id + ", action: " + action);
+    console.log("< setRelayAction: id: " + id + ", action: " + stateStr);
 }
 
 function fallbackToPredefinedHours() {
@@ -124,36 +177,136 @@ function fallbackToPredefinedHours() {
         console.log(nowHour);
         setRelayAction(0, false)         
     }
+
     console.log("> fallbackToPredefinedHours() Prices are NOT retrived. ");
 }
 
-
+// Set device action according cheapeast sequential Period
 function setPeriodPricesForRelay(id) {
     console.log("> setPeriodPricesForRelay id: " + id);    
     
     //console.log("pricesPeriod:");
     //console.log(pricesPeriod);
-    if (pricesPeriod != null && pricesPeriod != "undefined") {
+    if (pricesPeriod != null && pricesPeriod != undefined) {
         // console.log("setPeriodPricesForRelay() pricesPeriod not null. pricesPeriod: ");
         // console.log(pricesPeriod);
         let startTime = new Date(pricesPeriod.DateTimeStart);
         let endTime = new Date(pricesPeriod.DateTimeEnd);
         let now = new Date();
+        let priceNow = pricesPeriod.AveragePriceWithTax;
 
         if (startTime < now && endTime > now ) {
             console.log("setPeriodPricesForRelay() set relay ON");
-            setRelayAction(0, true);
+            setRelayAction(id, true);
         } else {
             console.log("setPeriodPricesForRelay() set relay OFF");
-            setRelayAction(0, false) 
+            setRelayAction(id, false) 
+
+            // If device was not set ON according RankedPrices, check if there is configuraton belowPrices
+            setCheapPricesBelow(id, now, priceNow);
         }
     } else {
         // prices are not retrived, fallback to config backuptimes
         fallbackToPredefinedHours();
     }
+    
     console.log("< setPeriodPricesForRelay id: " + id);
 
 }
+
+// Check if there is configuration that price below configuration should always put ON
+function setCheapPricesBelow(id, now, priceNow) {
+    console.log("> setCheapPricesBelow id: " + id + ", priceNow: " + priceNow);  
+
+    if (CONFIG.priceBelowDeviceOnStart === 0 && CONFIG.priceBelowDeviceOnEnd === 0) {
+        //console.log("setCheapPricesBelow not enabled.");
+        return;
+    }
+
+    if (priceNow === null || priceNow === undefined) {
+        //console.log("setCheapPricesBelow priceNow === null. setCheapPricesBelow checkking is NOT done. ");     
+        return;   
+    }
+
+    // let relayId = null;
+    // for (let relay in RELAY_OUTPUTS) {
+    //     let obj = RELAY_OUTPUTS[relay];
+    //     if (obj === id) {
+    //         relayId = obj;
+    //     }
+    // }
+    let relayId = RELAY_OUTPUTS[id];
+
+
+    // Check if relay is configured use below prices
+    if (relayId.useCheapBelowPrices !== 1) {
+        console.log("Relay id: " + id + " is not using cheapPricesBelow. setCheapPricesBelow checkking is NOT done. ");
+        return;
+    }
+
+    let nowHours = now.getHours();
+
+    if (priceNow < CONFIG.priceBelowDeviceOn) {
+        if ( (CONFIG.priceBelowDeviceOnStart < nowHours && CONFIG.priceBelowDeviceOnEnd > nowHours ) ) {
+            console.log("setCheapPricesBelow: Current price is below " + CONFIG.priceBelowDeviceOn + ", id: " + id + " should be set ON");
+            setRelayAction(id, true);
+        }
+    }    
+
+    console.log("< setCheapPricesBelow id: " + id );  
+}
+
+// Set device actions according Rank prices
+function setRankPricesForRelay(id, hours) {
+    console.log("> setRankPricesForRelay id: " + id);  
+
+    // let startTime = new Date(pricesRank.DateTime);
+    // let nextHour = startTime.getHours + 1;
+    // let endTime = new Date(startTime);
+    // endTime.setHours(nextHour);
+    let now = new Date();
+
+    let action = false;
+    let priceNow;
+
+    // Search now ranking
+    for (let detail in pricesRank) {
+        // console.log("hour detail");
+        // console.log(detail);
+        let rank = pricesRank[detail];
+
+        let startTime = new Date(rank.DateTime);
+        let nextHour = startTime.getHours() + 1;
+        let endTime = new Date(startTime);
+        endTime.setHours(nextHour);
+
+        if ( (startTime < now && endTime > now ) ) {
+            console.log("rank.Rank");
+            console.log(rank.Rank);
+            console.log(rank.DateTime); 
+            // console.log(startTime);
+            // console.log(endTime);
+            priceNow = rank.PriceWithTax;          
+            if (rank.Rank < (hours + 1)) {
+                console.log("setRankPricesForRelay id: " + id + " should be set ON");
+                setRelayAction(id, true);
+                action = true;
+            } else {
+                console.log("setRankPricesForRelay id: " + id + " should be set OFF");
+                setRelayAction(id, true);
+            }
+        }  
+        
+    }
+        
+    // If device was not set ON according RankedPrices, check if there is configuraton belowPrices
+    if (!action) {
+        setCheapPricesBelow(id, now, priceNow);
+    }
+
+    console.log("> setRankPricesForRelay id: " + id);  
+}
+
 function checkPrices() {
     console.log("> Start checkPrices()");
 
@@ -170,7 +323,7 @@ function checkPrices() {
         if (obj.profile === 1) {
             setPeriodPricesForRelay(i);
         } else {
-            console.log("// TODO OTHER PROFILES");
+            setRankPricesForRelay(i, obj.hours);
         }
 
         i++;
@@ -191,13 +344,38 @@ function setShellyTimer() {
     console.log("now: " + now + ", day: " + currentDayOfMonth);
 
     if (previousRetrievedDate !== currentDayOfMonth) {
-        pricesPreriod = retrievePrices(periodPricesUrl);
+        // PeriodicalPrices
+        pricesPreriod = retrievePrices(periodPricesUrl, true);
         previousRetrievedDate = currentDayOfMonth;
+        // RankedPrices
+        pricesRank = retrievePrices(priceRankUrl, false);
     }
 
     checkPrices();
 
     console.log("< End setShellyTimer()");
+}
+
+// Check config values
+if (CONFIG.priceBelowDeviceOnStart > CONFIG.priceBelowDeviceOnEnd) {
+    console.log("ERROR in config! CONFIG.priceBelowDeviceOnStart cannot be greater than CONFIG.priceBelowDeviceOnEnd. Feature turned OFF.");
+    CONFIG.priceBelowDeviceOnStart = 0;
+    CONFIG.priceBelowDeviceOnEnd = 0;
+}
+if (CONFIG.priceBelowDeviceOneEnd < CONFIG.priceBelowDeviceOnStart) {
+    console.log("ERROR in config! CONFIG.priceBelowDeviceOnEnd cannot be less than CONFIG.priceBelowDeviceOnStart. Feature turned OFF.");
+    CONFIG.priceBelowDeviceOnStart = 0;
+    CONFIG.priceBelowDeviceOnEnd = 0;
+}
+if (CONFIG.priceBelowDeviceOnStart < 0 || CONFIG.priceBelowDeviceOnStart > 23) {
+    console.log("ERROR in config! CONFIG.priceBelowDeviceOnStart should be between 0-23. Feature turned OFF.");
+    CONFIG.priceBelowDeviceOnStart = 0;
+    CONFIG.priceBelowDeviceOnEnd = 0;
+}
+if (CONFIG.priceBelowDeviceOnEnd < 0 || CONFIG.priceBelowDeviceOnEnd > 24) {
+    console.log("ERROR in config! CONFIG.priceBelowDeviceOnEnd should be between 0-24. Feature turned OFF.");
+    CONFIG.priceBelowDeviceOnStart = 0;
+    CONFIG.priceBelowDeviceOnEnd = 0;
 }
 
 //setInterval(setShellyTimer, 5000);
