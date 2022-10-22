@@ -20,7 +20,7 @@ This should open in a new browser window with local access to Shelly's device.
 * Open **Libary** modular
 * Push **Configure URL** button
 * Paste URL `https://github.com/sutinse/shelly/blob/main/README.md`
-* Click on desired script
+* Click on desired script (nordpool-api-spot.hinta.js)
  
 ## FEATURES
 * Two profiles:   
@@ -48,9 +48,9 @@ This should open in a new browser window with local access to Shelly's device.
 * 1 minute. Price update interval in milliseconds   
     **update_time: 60000**
 * FALLBACK start time if prices cannot be retrived, hour when relay is set ON   
-   **periodFallbackHourStart: 2,**
+   **periodFallbackHourStart: 2**
  * FALLBACK end time if prices cannot be retrived, hour when relay is set OFF   
-    **periodFallbackHourEnd: 5**,
+    **periodFallbackHourEnd: 5**
 
 ### RELAY
 You can have multipe outputs in relay. This default configuration has TWO.   
