@@ -6,6 +6,7 @@ https://api.spot-hinta.fi/swagger/ui#
 ```
 
 # Script setup
+
 Make sure your Shelly device is connected to the Internet and accessible from LAN.
 * Login to the cloud ☁️
 * Find device
@@ -20,7 +21,15 @@ This should open in a new browser window with local access to Shelly's device.
 * Open **Libary** modular
 * Push **Configure URL** button
 * Paste URL `https://github.com/sutinse/shelly/blob/main/README.md`
-* Click on desired script (nordpool-api-spot.hinta.js)
+* Click on desired script (**nordpool-api-spot.hinta.js**)
+
+Alternate way to installa script
+
+* Click on **Script** button
+* Click **Add Script** button
+* Give name to you script eg **nordpool-api-spot-hinta-fi.js**
+* Copy & paste script content from **https://raw.githubusercontent.com/sutinse/shelly/main/nordpool-api-spot-hinta-fi.js**
+* **Save** or **Save and run**
  
 ## FEATURES
 * Two profiles:   
