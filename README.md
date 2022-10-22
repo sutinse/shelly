@@ -23,12 +23,13 @@ This should open in a new browser window with local access to Shelly's device.
 * Paste URL `https://github.com/sutinse/shelly/blob/main/README.md`
 * Click on desired script (**nordpool-api-spot.hinta.js**)
 
-Alternate way to installa script
+Alternate way to install script
 
 * Click on **Script** button
 * Click **Add Script** button
 * Give name to you script eg **nordpool-api-spot-hinta-fi.js**
-* Copy & paste script content from **https://raw.githubusercontent.com/sutinse/shelly/main/nordpool-api-spot-hinta-fi.js**
+* Copy & paste script content from  
+  **https://raw.githubusercontent.com/sutinse/shelly/main/nordpool-api-spot-hinta-fi.js**
 * **Save** or **Save and run**
  
 ## FEATURES
