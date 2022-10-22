@@ -2,14 +2,14 @@
 const axios = require("axios");
 
 let CONFIG = {
-    // Set cheapest serial hour count IF you use that Profile 1 (cheapest serial hours)
+    // Set cheapest SEQUENTIAL hour count IF you use that Profile 1 (cheapest serial hours)
     cheapestPeriodHours: 3,
     // If prices cannot be retrived, hour when relay is set ON
     periodFallbackHourStart: 2,
     // If prices cannot be retrived, hour when relay is set ON
     periodFallbackHourEnd: 5,
-    // Set the price, when the equipment is ON if the price is below this set 
-    //between CONFIG interval priceBelowDeviceOnStart --> priceBelowDeviceOnEnd
+    // Set the price, when the equipment is ON if the price is below this set  between CONFIG 
+    // interval priceBelowDeviceOnStart --> priceBelowDeviceOnEnd NOTE! Only can be used with Profile 0
     // Example value is below = 3 snt
     priceBelowDeviceOn: 3,
     // If price is below that CONFIG priceBelowDeviceOn, set device ON starting this HOUR
@@ -21,12 +21,11 @@ let CONFIG = {
 let RELAY_OUTPUTS = {
     // This relay has 2 output. Add more if your relays has more (like Pro 4PM has four)
     0 : {
-        // profile 1 means cheapest sequential hours
+        // profile 1 means cheapest SEQUENTIAL hours
         profile : 1,
-        // NOT USED in Profile1! SET hours in CONFIG cheapestPeriodHours variable
+        // NOTE! NOT USED in Profile1! SET HOURS in CONFIG cheapestPeriodHours variable
         hours : 3,
-        // if relay is set ON if price is below configured between configured timeinterval
-        // 0 = NOT USE belowprices, 1 = USE belowprices
+        // NOTE! NOT USED IN PROFILE 1.
         useCheapBelowPrices : 0
     },
     1 : {
@@ -34,7 +33,7 @@ let RELAY_OUTPUTS = {
         profile : 0,
         // Hours count that device should be ON 
         hours : 4,
-        // if relay is set ON if price is below configured between configured timeinterval
+        // output is set ON if price is below configured between configured timeinterval
         // 0 = NOT USE belowprices, 1 = USE belowprices
         useCheapBelowPrices : 1
     }
@@ -332,6 +331,10 @@ function checkPrices() {
     console.log("< End checkPrices()");
 }
 
+function getTime() {
+
+}
+
 function setShellyTimer() {
     console.log("> Start setShellyTimer()");
     console.log("FallbackHour: Start:");
@@ -356,7 +359,33 @@ function setShellyTimer() {
     console.log("< End setShellyTimer()");
 }
 
-// Check config values
+// Check Fallback config -values
+if (CONFIG.periodFallbackHourStart > CONFIG.periodFallbackHourEnd) {
+    console.log("ERROR in config! CONFIG.periodFallbackHourStart cannot be greater than CONFIG.periodFallbackHourEnd.");
+    console.log("Using Fallback values  CONFIG.periodFallbackHourStart=1, CONFIG.periodFallbackHourEnd=5.");
+    CONFIG.periodFallbackHourStart = 1;
+    CONFIG.periodFallbackHourEnd= 5;
+}
+if (CONFIG.periodFallbackHourEnd > CONFIG.periodFallbackHourStart) {
+    console.log("ERROR in config! CONFIG.periodFallbackHourEnd cannot be less than CONFIG.periodFallbackHourStart.");
+    console.log("Using Fallback values  CONFIG.periodFallbackHourStart=1, CONFIG.periodFallbackHourEnd=5.");
+    CONFIG.periodFallbackHourStart = 1;
+    CONFIG.periodFallbackHourEnd= 5;
+}
+if (CONFIG.periodFallbackHourStart < 0 ||  CONFIG.periodFallbackHourStart > 23) {
+    console.log("ERROR in config! CONFIG.periodFallbackHourStart should be between 0-23.");
+    console.log("Using Fallback values  CONFIG.periodFallbackHourStart=1, CONFIG.periodFallbackHourEnd=5.");
+    CONFIG.periodFallbackHourStart = 1;
+    CONFIG.periodFallbackHourEnd= 5;
+}
+if (CONFIG.periodFallbackHourEnd > 0 ||  CONFIG.periodFallbackHourEnd > 24)  {
+    console.log("ERROR in config! CONFIG.periodFallbackHourEnd should be between 0-24.");
+    console.log("Using Fallback values  CONFIG.periodFallbackHourStart=1, CONFIG.periodFallbackHourEnd=5.");
+    CONFIG.periodFallbackHourStart = 1;
+    CONFIG.periodFallbackHourEnd= 5;
+}
+
+// Check CheapPricesBelow config values
 if (CONFIG.priceBelowDeviceOnStart > CONFIG.priceBelowDeviceOnEnd) {
     console.log("ERROR in config! CONFIG.priceBelowDeviceOnStart cannot be greater than CONFIG.priceBelowDeviceOnEnd. Feature turned OFF.");
     CONFIG.priceBelowDeviceOnStart = 0;
