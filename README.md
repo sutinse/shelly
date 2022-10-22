@@ -23,9 +23,9 @@ This should open in a new browser window with local access to Shelly's device.
 * Click on desired script
  
 ## FEATURES
-* Two profiles: 
-  0 = Cheapest hours in day (eg. relay is ON hour amount in any time when it is cheap)
-  1 = Period hours in day (eg relay is ON only 02-05 interval when it is longest cheap interval)
+* Two profiles:   
+  0 = Cheapest hours in day (eg. relay is ON hour amount in any time when it is cheap)   
+  1 = Period hours in day (eg relay is ON only 02-05 interval when it is longest cheap interval)   
 * Fallback: if price retrieval fails, your can define interval when relay is ON    
 (if you have problem with you WLAN, you can backup interval eg 02-05)
 * Prices are retrieved when hour changes (means 24 times in day)
@@ -43,12 +43,12 @@ This should open in a new browser window with local access to Shelly's device.
 ## SCRIPT CUSTOM CONFIGURATION
 
 ### CONFIG
-* CHANGE number how long is CHEAPEST PERIOD when relay is on
-   *let periodPricesUrl = "https://api.spot-hinta.fi/CheapestPeriod/**3**";*
+* CHANGE number how long is CHEAPEST PERIOD when relay is on  
+   *"https://api.spot-hinta.fi/CheapestPeriod/**3**";*
 * 1 minute. Price update interval in milliseconds   
     **update_time: 60000**
 * FALLBACK start time if prices cannot be retrived, hour when relay is set ON   
- *   **periodFallbackHourStart: 2,**
+   **periodFallbackHourStart: 2,**
  * FALLBACK end time if prices cannot be retrived, hour when relay is set OFF   
     **periodFallbackHourEnd: 5**,
 
@@ -58,11 +58,11 @@ Note. If you copy more output, **REMEMBER change ID to correct**
 Each output can have different Profile.   
    
 * RELAY'S OUTPUT **DEVICE CHANNEL**: Setting -> Settings  - > Device Information -> DEVICE CHANNEL   
-    ** NOTE: EACH OUTPUT HAS DIFFERENT DEVICE CHANNEL**  
+  **NOTE: EACH OUTPUT HAS DIFFERENT DEVICE CHANNEL**  
     **id: 0**
-* profile 0 (default) means CHEAPEST hours in day  
+* **profile 0** (default) means CHEAPEST hours in day  
     **profile : 0**
-* profile 1 means cheapest PERIOD HOURS  
+* **profile 1** means cheapest PERIOD HOURS  
     **profile : 1**
 
 
