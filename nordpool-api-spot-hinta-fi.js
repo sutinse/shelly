@@ -1,4 +1,4 @@
-// TODO Check how number conversion to String can be done in mJS
+ // TODO Check how number conversion to String can be done in mJS
 //let periodPricesUrl = "https://api.spot-hinta.fi/CheapestPeriod/" + CONFIG.cheapestPeriodHours;
 // CHANGE number how long is CHEAPEST PERIOD when relay is on
 let periodPricesUrl = "https://api.spot-hinta.fi/CheapestPeriod/3";
@@ -7,9 +7,9 @@ let CONFIG = {
     // 1 minute. Price update interval in milliseconds
     update_time: 60000,
     // If prices cannot be retrived, hour when relay is set ON
-    periodFallbackHourStart: 2,
+    periodFallbackHourStart: 1,
     // If prices cannot be retrived, hour when relay is set OFF
-    periodFallbackHourEnd: 5,          
+    periodFallbackHourEnd: 6,          
     // Set cheapest SEQUENTIAL hour count IF you use that Profile 1 (cheapest serial hours)
     cheapestPeriodHours: 3,
     // interval priceBelowDeviceOnStart --> priceBelowDeviceOnEnd NOTE! Only can be used with Profile 0
@@ -50,8 +50,6 @@ let RELAY_OUTPUTS = {
     }
 };
 
-
-
 // --------------------DONT CHANGE ANYTHING BELOW THIS LINE --------------------------------------------
 
 let current_price = null;
@@ -59,12 +57,17 @@ let last_hour = null;
 
 let priceRankUrl = "https://api.spot-hinta.fi//JustNow";
 let pricesRank=null;
+let pricesRankRetrived=0;
 let pricesPeriod=null;
 let previousRetrievedDate=0;
+let pricesPeriodRetrieved=0;
+// for String -> number conversion
+let clockHours=["00","01","02","03","04","05","06","07","08","09","10","11","12","13","14","15","16","17","18","19","20","21","23","24"];
 
 // Retrive Ranked Prices
 function retrieveRankedPrices(url) {
     //print("> retrieveRankedPrices: Retriving prices start from url: ", url);
+    
     Shelly.call(
     "http.get",
     {
@@ -75,16 +78,19 @@ function retrieveRankedPrices(url) {
       if (error_code !== 0 || response.code > 400) {
           print("ERROR retriving Ranked prices. ", error_code, error_message);          
           pricesRank = null;
+          pricesRankRetrived=1;
           return;
       }
 
       let pricesRanked = JSON.parse(JSON.stringify(response));
       if (pricesRanked.code === 200) {
          pricesRank = JSON.parse(response.body);
+         pricesRankRetrived=2;
          print("Ranked Prices updated ", JSON.stringify(pricesRank)); 
       } else {
          print("ERROR retriving Ranked prices CODE != 200.", error_code, error_message); 
          pricesRank = null;
+         pricesRankRetrived=1;
       }
     }
   )
@@ -93,7 +99,7 @@ function retrieveRankedPrices(url) {
 // Retrive PeriodPrices
 function retrievePeriodPrices(url) {
     //print("> retrievePeriodPrices: Retriving prices start from url: ", url);
-     
+    
     Shelly.call(
     "http.get",
     {
@@ -103,12 +109,14 @@ function retrievePeriodPrices(url) {
       //print("error_code: ", error_code);
       if (error_code !== 0 || response.code > 400) {
          pricesPeriod = null;
+         pricesPeriodRetrieved=1;
          print("ERROR retriving Period Prices ", error_code, error_message);
          return;
       }
 
       // PeriodPrices
       pricesPeriod = JSON.parse(response.body);
+      pricesPeriodRetrieved=2;
       print("Period Prices updated", JSON.stringify(pricesPeriod));   
     }
   )
@@ -144,13 +152,21 @@ function setRelayAction(id, action) {
 function fallbackToPredefinedHours(id, hour) {
     //print("> fallbackToPredefinedHours() Prices are NOT retrived. id, hour ", id, hour);
 
-    let start = CONFIG.periodFallbackHourStart;
-    let end = CONFIG.periodFallbackHourEnd;
-    if (start < hour && hour > end ) {
+    let start = CONFIG.periodFallbackHourStart -1;
+    let end = CONFIG.periodFallbackHourEnd + 1;
+    // mJS does not offer any String conversion to number
+    let numHour=25;
+    for (let i=0; i < clockHours.length; i++) {
+       if (clockHours[i] === hour) {
+          numHour = i;
+       }
+   }    
+    
+    if (start < numHour && end > numHour) {
         print("+++ POWER ON  (FALLBACK). Id, hour, startPeriod, endPeriod", id, hour, start, end )
         setRelayAction(id, true);
     } else {
-        print("+++ POWER OFF (FALLBACK). Id, hour, startPeriod, endPeriod", id, hour, start, end )
+        //print("--- POWER OFF (FALLBACK). Id, hour, startPeriod, endPeriod", id, hour, start, end )
         setRelayAction(id, false);         
     }
 
@@ -172,6 +188,8 @@ function setRankPricesForRelay(id, configHours, hour) {
     if (configHours > ranking) {
       print("+++ POWER ON  (RANKED). id, currentRanking, config.hours", id, ranking, configHours);
       action = true;    
+    } else {
+     //print("--- POWER OFF (RANKED). id, currentRanking, config.hours", id, ranking, configHours);    
     }
     setRelayAction(id, action);
              
@@ -190,16 +208,39 @@ function setPeriodPricesForRelay(id, hour) {
     if (pricesPeriod !== null && pricesPeriod !== undefined) {
         let startTime = pricesPeriod.DateTimeStart;
         let endTime = pricesPeriod.DateTimeEnd;
+        // Note. This is String
         let startHour = startTime.slice(11,13);
+        // Note. This is also String
         let endHour = endTime.slice(11,13);
+        
+        // mJS does not offer any String conversion to number
+        let numHour=25;
+        for (let i=0; i < clockHours.length; i++) {
+          if (clockHours[i] === hour) {
+              numHour = i;
+          }
+        }
 
+        let numStartHour=25;
+        for (let i=0; i < clockHours.length; i++) {
+          if (clockHours[i] === startHour) {
+              numStartHour = i-1;
+          }
+        }
+        let numEndHour=25;
+        for (let i=0; i < clockHours.length; i++) {
+          if (clockHours[i] === endHour) {
+              numEndHour = i+1;
+          }
+        }                
+        
         let priceNow = pricesPeriod.AveragePriceWithTax;
-
-        if (startHour < hour && endHour > hour ) {
+        
+        if (numStartHour < numHour && numEndHour > numHour ) {
             print("+++++ POWER ON  (PERIOD). Id, hour, startPeriod, endPeriod: ", id, hour, startHour, endHour);
             setRelayAction(id, true);
         } else {
-            //print("----- POWER OFF (PERIOD). Id, hour, startPeriod, endPeriod: ", id, hour, startHour, endHour);
+            //print("--- POWER OFF (PERIOD). Id, hour, startPeriod, endPeriod: ", id, hour, startHour, endHour);
             setRelayAction(id, false) 
 
             // If device was not set ON according RankedPrices, check if there is configuraton belowPrices
@@ -240,11 +281,15 @@ Timer.set(CONFIG.update_time, true, function (userdata) {
       print(error_message);
       return;
     } else {
+      // Note. This is String
       let hour = resp.time[0] + resp.time[1];
+      //print("hour after: ", hour, typeof(hour));
       //update prices
-      if (last_hour !== hour || pricesPeriod === null || pricesRank === null) {
+      if (last_hour !== hour) {
         //print("update hour");
         last_hour = hour;
+        pricesRankRetrived = 0;
+        pricesPeriodRetrieved = 0;
         
         // PeriodicalPrices
         retrievePeriodPrices(periodPricesUrl);
@@ -253,12 +298,11 @@ Timer.set(CONFIG.update_time, true, function (userdata) {
       }
 
       //check if current price is set
-      if (pricesPeriod !== null && pricesRank !== "undefined") {
+      if (pricesPeriodRetrieved > 0 && pricesRankRetrived > 0 ) {
           checkPrices(hour);
       } else {
         print("Current Period- and RankedPrices are null. Waiting for price update!");
       }
-
     }
   });
 });
