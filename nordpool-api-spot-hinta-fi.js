@@ -83,7 +83,8 @@ function retrieveRankedPrices(url) {
     if (pricesRanked.code === 200) {
        pricesRank = JSON.parse(response.body);
        pricesRankRetrived=2;
-       print("Ranked Prices updated ", JSON.stringify(pricesRank)); 
+       print("Ranked Prices updated ");
+       print(JSON.stringify(pricesRank)); 
     } else {
        print("ERROR retriving Ranked prices CODE != 200.", error_code, error_message); 
        pricesRank = null;
@@ -114,7 +115,8 @@ function retrievePeriodPrices(url) {
     // PeriodPrices
     pricesPeriod = JSON.parse(response.body);
     pricesPeriodRetrieved=2;
-    print("Period Prices updated", JSON.stringify(pricesPeriod));   
+    print("Period Prices updated");
+    print(JSON.stringify(pricesPeriod));   
   }
 )
 }
