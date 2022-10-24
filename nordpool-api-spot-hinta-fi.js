@@ -5,7 +5,7 @@ let CONFIG = {
   // If prices cannot be retrived, hour when relay is set ON
   periodFallbackHourStart: 1,
   // If prices cannot be retrived, hour when relay is set OFF
-  periodFallsbackHourEnd: 6,          
+  periodFallbackHourEnd: 6,          
   // Set cheapest SEQUENTIAL hour count IF you use that Profile 1 (cheapest serial hours)
   cheapestPeriodHours: 3,
   // interval priceBelowDeviceOnStart --> priceBelowDeviceOnEnd NOTE! Only can be used with Profile 0
@@ -149,26 +149,18 @@ function setRelayAction(id, action) {
 }
 
 function fallbackToPredefinedHours(id, hour) {
-  //print("> fallbackToPredefinedHours() Prices are NOT retrived. id, hour ", id, hour);
+  print("> fallbackToPredefinedHours() Prices are NOT retrived. id, hour ", id, hour);
 
   let start = CONFIG.periodFallbackHourStart -1;
   let end = CONFIG.periodFallbackHourEnd + 1;
-  // mJS does not offer any String conversion to number
-  let numHour=25;
-  for (let i=0; i < clockHours.length; i++) {
-     if (clockHours[i] === hour) {
-        numHour = i;
-     }
- }    
   
-  if (start < numHour && end > numHour) {
+  if (start < hour && end > hour) {
       print("+++ POWER ON  (FALLBACK). Id, hour, startPeriod, endPeriod", id, hour, start, end )
       setRelayAction(id, true);
   } else {
       //print("--- POWER OFF (FALLBACK). Id, hour, startPeriod, endPeriod", id, hour, start, end )
       setRelayAction(id, false);         
   }
-
 }
 // Set device actions according Rank prices
 function setRankPricesForRelay(id, configHours, hour) {
@@ -201,8 +193,6 @@ function setRankPricesForRelay(id, configHours, hour) {
 // Set device action according cheapeast sequential Period
 function setPeriodPricesForRelay(id, hour) {
   //print("> setPeriodPricesForRelay id: ", id, hour);    
-  
-  //print("pricesPeriod:", pricesPeriod);
  
   if (pricesPeriod !== null && pricesPeriod !== undefined) {
       let startTime = pricesPeriod.DateTimeStart;
@@ -212,33 +202,13 @@ function setPeriodPricesForRelay(id, hour) {
       // Note. This is also String
       let endHour = endTime.slice(11,13);
       
-      // mJS does not offer any String conversion to number
-      let numHour=25;
-      for (let i=0; i < clockHours.length; i++) {
-        if (clockHours[i] === hour) {
-            numHour = i;
-            break;
-        }
-      }
-
-      let numStartHour=25;
-      for (let i=0; i < clockHours.length; i++) {
-        if (clockHours[i] === startHour) {
-            numStartHour = i-1;
-            break;
-        }
-      }
-      let numEndHour=25;
-      for (let i=0; i < clockHours.length; i++) {
-        if (clockHours[i] === endHour) {
-            numEndHour = i+1;
-            break;
-        }
-      }                
+      // Parse String to number
+      let numStartHour=JSON.parse(startHour);
+      let numEndHour = JSON.parse(endHour); 
       
       let priceNow = pricesPeriod.AveragePriceWithTax;
       
-      if (numStartHour < numHour && numEndHour > numHour ) {
+      if (numStartHour < hour && numEndHour > hour ) {
           print("+++++ POWER ON  (PERIOD). Id, hour, startPeriod, endPeriod: ", id, hour, startHour, endHour);
           setRelayAction(id, true);
       } else {
@@ -284,8 +254,8 @@ Shelly.call("Sys.GetStatus", {}, function (resp, error_code, error_message) {
     return;
   } else {
     // Note. This is String
-    let hour = resp.time[0] + resp.time[1];
-    //print("hour after: ", hour, typeof(hour));
+    let strHour = resp.time[0] + resp.time[1];
+    let hour = JSON.parse(strHour);
     //update prices
     if (last_hour !== hour) {
       //print("update hour");
@@ -295,7 +265,7 @@ Shelly.call("Sys.GetStatus", {}, function (resp, error_code, error_message) {
       
       // PeriodicalPrices are retrived in start or when day changes -> one time in day
       // Cheapest returns always cheapest from this time, so once in day
-      if (hour==="00" || pricesPeriod===null) {
+      if (hour===0 || pricesPeriod===null) {
         retrievePeriodPrices(periodPricesUrl);
       }
       // RankedPrices
