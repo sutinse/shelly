@@ -51,7 +51,6 @@ let RELAY_OUTPUTS = {
 let current_price = null;
 let last_hour = null;
 
-//let periodPricesUrl = "https://api.spot-hinta.fi/CheapestPeriod/" + CONFIG.cheapestPeriodHours;
 let periodPricesUrl = "https://api.spot-hinta.fi/CheapestPeriod/" + JSON.stringify(CONFIG.cheapestPeriodHours);
 let priceRankUrl = "https://api.spot-hinta.fi/JustNow";
 let pricesRank=null;
@@ -292,8 +291,11 @@ Shelly.call("Sys.GetStatus", {}, function (resp, error_code, error_message) {
       pricesRankRetrived = 0;
       pricesPeriodRetrieved = 0;
       
-      // PeriodicalPrices
-      retrievePeriodPrices(periodPricesUrl);
+      // PeriodicalPrices are retrived in start or when day changes -> one time in day
+      // Cheapest returns always cheapest from this time, so once in day
+      if (hour==="00" || pricesPeriod===null) {
+        retrievePeriodPrices(periodPricesUrl);
+      }
       // RankedPrices
       retrieveRankedPrices(priceRankUrl);
     }
