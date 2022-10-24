@@ -259,11 +259,11 @@ Shelly.call("Sys.GetStatus", {}, function (resp, error_code, error_message) {
       //print("update hour");
       last_hour = hour;
       pricesRankRetrived = 0;
-      pricesPeriodRetrieved = 0;
       
       // PeriodicalPrices are retrived in start or when day changes -> one time in day
       // Cheapest returns always cheapest from this time, so once in day
       if (hour===0 || pricesPeriod===null) {
+        pricesPeriodRetrieved = 0;
         retrievePeriodPrices(periodPricesUrl);
       }
       // RankedPrices
