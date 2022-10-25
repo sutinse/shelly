@@ -173,7 +173,7 @@ function setRankPricesForRelay(id, configHours, hour) {
   let action = false;
   let priceNow = null; 
   
-  let ranking = pricesRank.Rank + 1;
+  let ranking = pricesRank.Rank - 1;
   if (configHours > ranking) {
     print("+++ POWER ON  (RANKED). id, currentRanking, config.hours", id, ranking, configHours);
     action = true;    
