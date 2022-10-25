@@ -201,8 +201,8 @@ function setPeriodPricesForRelay(id, hour) {
       let endHour = endTime.slice(11,13);
       
       // Parse String to number
-      let numStartHour=JSON.parse(startHour);
-      let numEndHour = JSON.parse(endHour); 
+      let numStartHour=JSON.parse(startHour) - 1;
+      let numEndHour = JSON.parse(endHour) + 1; 
       
       let priceNow = pricesPeriod.AveragePriceWithTax;
       
