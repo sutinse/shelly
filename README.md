@@ -1,5 +1,5 @@
-# WARNING: STILL BETA
-Start looking good but use with care...
+
+
 
 # Add Nordpool price 💶 switching to your shelly device
  
